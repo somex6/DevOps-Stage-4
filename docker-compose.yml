@@ -42,7 +42,7 @@ services:
     environment:
       - AUTH_API_PORT=8081
       - USERS_API_ADDRESS=http://users-api:8083
-      - JWT_SECRET=bXlmYW5jeXNlY3JldA==
+      - JWT_SECRET=s3HXPDQuPOIaBJionZD7YRytN3hpqPHF4mKy9+u6ihs=
     labels:
       - traefik.enable=true
       - traefik.http.routers.auth-api.rule=PathPrefix(`/api/auth`)
@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile
     container_name: users-api
     environment:
-      - JWT_SECRET=bXlmYW5jeXNlY3JldA==
+      - JWT_SECRET=s3HXPDQuPOIaBJionZD7YRytN3hpqPHF4mKy9+u6ihs=
       - SERVER_PORT=8083
       - traefik.enable=true
       - traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)
@@ -116,11 +116,11 @@ services:
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.zipkin.rule=PathPrefix(`/api/zipkin`)
-      - traefik.http.routers.zipkin.middlewares=zipkin-stripprefix
-      - traefik.http.middlewares.zipkin-stripprefix.stripprefix.prefixes=/api/zipkin
+    # labels:
+      # - traefik.enable=true
+      # - traefik.http.routers.zipkin.rule=PathPrefix(`/api/zipkin`)
+      # - traefik.http.routers.zipkin.middlewares=zipkin-stripprefix
+      # - traefik.http.middlewares.zipkin-stripprefix.stripprefix.prefixes=/api/zipkin
     ports:
       - "9411:9411"
     networks:
