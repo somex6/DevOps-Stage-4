@@ -1,5 +1,6 @@
 # Use the official OpenJDK image as the base image
-FROM maven:3.9.6-amazoncorretto-21 AS build
+# FROM maven:3.9.6-amazoncorretto-21 AS build
+FROM maven:3.6.3-jdk-8 AS build
 
 # Set working directory
 WORKDIR /app
@@ -18,9 +19,10 @@ COPY . .
 # COPY src src
 # RUN mvn dependency:go-offline -B
 # Package the application
-ENV MAVEN_CONFIG=
+# ENV MAVEN_CONFIG=
 # Use the Maven Wrapper and specify the local repo
-RUN ./mvnw clean install -Dmaven.repo.local=/app/.m2 -DskipTests
+# RUN ./mvnw clean install -Dmaven.repo.local=/app/.m2 -DskipTests
+RUN ./mvnw clean install -DskipTests
 # RUN ./mvnw package -DskipTests
 
 # Use a smaller runtime image
