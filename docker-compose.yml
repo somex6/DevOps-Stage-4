@@ -42,7 +42,7 @@ services:
     environment:
       - AUTH_API_PORT=8081
       - USERS_API_ADDRESS=http://users-api:8083
-      - JWT_SECRET=s3HXPDQuPOIaBJionZD7YRytN3hpqPHF4mKy9+u6ihs=
+      - JWT_SECRET=myfancysecret
     labels:
       - traefik.enable=true
       - traefik.http.routers.auth-api.rule=PathPrefix(`/api/auth`)
@@ -59,7 +59,7 @@ services:
       dockerfile: Dockerfile
     container_name: users-api
     environment:
-      - JWT_SECRET=s3HXPDQuPOIaBJionZD7YRytN3hpqPHF4mKy9+u6ihs=
+      - JWT_SECRET=myfancysecret
       - SERVER_PORT=8083
       - traefik.enable=true
       - traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)
