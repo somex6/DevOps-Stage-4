@@ -94,8 +94,8 @@ services:
       context: ./log-message-processor  # Adjust this path to your auth-api directory
       dockerfile: Dockerfile
     container_name: log-message-processor
-    # ports:
-    #   - "8082:8082"
+    ports:
+      - "8090:8090"
     environment:
       - REDIS_HOST=redis-queue
       - REDIS_PORT=6379
