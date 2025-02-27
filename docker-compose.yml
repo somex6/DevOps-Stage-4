@@ -1,0 +1,109 @@
+# version: '3.8'
+
+services:
+  # traefik:
+  #   image: traefik:v2.5
+  #   command:
+  #     - --api.insecure=true
+  #     - --providers.docker=true
+  #     - --entrypoints.web.address=:80
+  #   ports:
+  #     - "80:80"
+  #     # - "8080:8080"  # Dashboard
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks:
+  #     - app-net
+  frontend:
+    build: 
+      context: ./frontend  # Adjust this path to your auth-api directory
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTH_API_ADDRESS=http://auth-api:8081
+      - TODOS_API_ADDRESS=http://todos-api:8082
+      - PORT=8080
+      - ZIPKIN_URL=http://zipkin:9411  
+    networks:
+      - app-net
+
+  auth-api:
+    build: 
+      context: ./auth-api  # Adjust this path to your auth-api directory
+      dockerfile: Dockerfile
+    container_name: auth-api
+    environment:
+      - AUTH_API_PORT=8081
+      - USERS_API_ADDRESS=http://users-api:8083
+      - JWT_SECRET=myfancysecret
+    ports:
+      - "8081:8081"
+    networks:
+      - app-net
+
+  users-api:
+    build: 
+      context: ./users-api  # Adjust this path to your auth-api directory
+      dockerfile: Dockerfile
+    container_name: users-api
+    environment:
+      - JWT_SECRET=myfancysecret
+      - SERVER_PORT=8083
+    ports:
+      - "8083:8083"
+    networks:
+      - app-net
+  todos-api:
+    build: 
+      context: ./todos-api  # Adjust this path to your auth-api directory
+      dockerfile: Dockerfile
+    container_name: todos-api
+    ports:
+      - "8082:8082"
+    environment:
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+      - TODO_API_PORT=8082
+    networks:
+      - app-net
+
+  log-message-processor:
+    build: 
+      context: ./log-message-processor  # Adjust this path to your auth-api directory
+      dockerfile: Dockerfile
+    container_name: log-message-processor
+    # ports:
+    #   - "8082:8082"
+    environment:
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    networks:
+      - app-net
+
+  redis-queue:
+    image: redis:alpine
+    container_name: redis-queue
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - app-net
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - app-net
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  redis-data:
