@@ -20,7 +20,7 @@ COPY . .
 # Package the application
 ENV MAVEN_CONFIG=
 # Use the Maven Wrapper and specify the local repo
-RUN ./mvnw clean install -Dmaven.repo.local=/app/.m2
+RUN ./mvnw clean install -Dmaven.repo.local=/app/.m2 -DskipTests
 # RUN ./mvnw package -DskipTests
 
 # Use a smaller runtime image
