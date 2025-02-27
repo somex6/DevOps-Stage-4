@@ -1,19 +1,19 @@
 # version: '3.8'
 
 services:
-  # traefik:
-  #   image: traefik:v2.5
-  #   command:
-  #     - --api.insecure=true
-  #     - --providers.docker=true
-  #     - --entrypoints.web.address=:80
-  #   ports:
-  #     - "80:80"
-  #     # - "8080:8080"  # Dashboard
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #   networks:
-  #     - app-net
+  traefik:
+    image: traefik:v2.5
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80"
+      # - "8080:8080"  # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - app-net
   frontend:
     build: 
       context: ./frontend  # Adjust this path to your auth-api directory
@@ -25,7 +25,12 @@ services:
       - AUTH_API_ADDRESS=http://auth-api:8081
       - TODOS_API_ADDRESS=http://todos-api:8082
       - PORT=8080
-      - ZIPKIN_URL=http://zipkin:9411  
+      - ZIPKIN_URL=http://zipkin:9411 
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=PathPrefix(`/`)
+      - traefik.http.routers.frontend.entrypoints=web
+      - traefik.http.services.frontend.loadbalancer.server.port=8080
     networks:
       - app-net
 
@@ -38,6 +43,11 @@ services:
       - AUTH_API_PORT=8081
       - USERS_API_ADDRESS=http://users-api:8083
       - JWT_SECRET=myfancysecret
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth-api.rule=PathPrefix(`/api/auth`)
+      - traefik.http.routers.auth-api.middlewares=auth-stripprefix
+      - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth
     ports:
       - "8081:8081"
     networks:
@@ -51,6 +61,10 @@ services:
     environment:
       - JWT_SECRET=myfancysecret
       - SERVER_PORT=8083
+      - traefik.enable=true
+      - traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)
+      - traefik.http.routers.todos-api.middlewares=todos-stripprefix
+      - traefik.http.middlewares.todos-stripprefix.stripprefix.prefixes=/api/todos
     ports:
       - "8083:8083"
     networks:
@@ -67,6 +81,11 @@ services:
       - REDIS_PORT=6379
       - REDIS_CHANNEL=log_channel
       - TODO_API_PORT=8082
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)
+      - traefik.http.routers.todos-api.middlewares=todos-stripprefix
+      - traefik.http.middlewares.todos-stripprefix.stripprefix.prefixes=/api/todos
     networks:
       - app-net
 
@@ -97,6 +116,11 @@ services:
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.zipkin.rule=PathPrefix(`/api/zipkin`)
+      - traefik.http.routers.zipkin.middlewares=zipkin-stripprefix
+      - traefik.http.middlewares.zipkin-stripprefix.stripprefix.prefixes=/api/zipkin
     ports:
       - "9411:9411"
     networks:
