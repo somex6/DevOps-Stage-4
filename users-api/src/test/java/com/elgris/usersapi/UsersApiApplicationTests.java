@@ -1,18 +1,16 @@
 package com.elgris.usersapi;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional; 
+import org.springframework.test.context.junit4.SpringRunner;
 
-@ExtendWith(SpringExtension.class)
+@RunWith(SpringRunner.class)
 @SpringBootTest
-@Transactional
 public class UsersApiApplicationTests {
 
-  @Test
-  public void contextLoads() {
-  }
+	@Test
+	public void contextLoads() {
+	}
 
 }

@@ -30,7 +30,6 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar /app/target/
 # COPY . .
-ENV JWT_SECRET=foo
 ENV SERVER_PORT=8083
 
 # Set the entrypoint to run the application
