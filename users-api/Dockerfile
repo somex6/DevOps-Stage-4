@@ -26,7 +26,8 @@ RUN ./mvnw clean install -Dmaven.repo.local=/app/.m2 -DskipTests
 # RUN ./mvnw package -DskipTests
 
 # Use a smaller runtime image
-FROM eclipse-temurin:21-jre
+# FROM eclipse-temurin:8-jre
+FROM openjdk:8-jre-alpine
 # Copy the JAR file from the build stage
 WORKDIR /app
 
