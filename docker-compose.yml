@@ -7,16 +7,23 @@ services:
       - --api.insecure=true
       - --providers.docker=true
       - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.le.acme.email=iwekasomto@proton.me
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
     ports:
       - "80:80"
-      # - "8080:8080"  # Dashboard
+      - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - letsencrypt:/letsencrypt
     networks:
       - app-net
   frontend:
     build: 
-      context: ./frontend  # Adjust this path to your auth-api directory
+      context: ./frontend  
       dockerfile: Dockerfile
     container_name: frontend
     ports:
@@ -29,14 +36,15 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.frontend.rule=PathPrefix(`/`)
-      - traefik.http.routers.frontend.entrypoints=web
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls.certresolver=le
       - traefik.http.services.frontend.loadbalancer.server.port=8080
     networks:
       - app-net
 
   auth-api:
     build: 
-      context: ./auth-api  # Adjust this path to your auth-api directory
+      context: ./auth-api  
       dockerfile: Dockerfile
     container_name: auth-api
     environment:
@@ -46,6 +54,8 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.auth-api.rule=PathPrefix(`/api/auth`)
+      - traefik.http.routers.auth-api.entrypoints=websecure
+      - traefik.http.routers.auth-api.tls.certresolver=le
       - traefik.http.routers.auth-api.middlewares=auth-stripprefix
       - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth
     ports:
@@ -55,7 +65,7 @@ services:
 
   users-api:
     build: 
-      context: ./users-api  # Adjust this path to your auth-api directory
+      context: ./users-api  
       dockerfile: Dockerfile
     container_name: users-api
     environment:
@@ -71,7 +81,7 @@ services:
       - app-net
   todos-api:
     build: 
-      context: ./todos-api  # Adjust this path to your auth-api directory
+      context: ./todos-api  
       dockerfile: Dockerfile
     container_name: todos-api
     ports:
@@ -84,15 +94,17 @@ services:
       - TODO_API_PORT=8082
     labels:
       - traefik.enable=true
-      - traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)
-      - traefik.http.routers.todos-api.middlewares=todos-stripprefix
-      - traefik.http.middlewares.todos-stripprefix.stripprefix.prefixes=/api/todos
+      - traefik.http.routers.auth-api.rule=PathPrefix(`/api/todos`)
+      - traefik.http.routers.auth-api.entrypoints=websecure
+      - traefik.http.routers.auth-api.tls.certresolver=le
+      - traefik.http.routers.auth-api.middlewares=auth-stripprefix
+      - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/todos
     networks:
       - app-net
 
   log-message-processor:
     build: 
-      context: ./log-message-processor  # Adjust this path to your auth-api directory
+      context: ./log-message-processor  
       dockerfile: Dockerfile
     container_name: log-message-processor
     ports:
@@ -117,11 +129,13 @@ services:
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
-    # labels:
-      # - traefik.enable=true
-      # - traefik.http.routers.zipkin.rule=PathPrefix(`/api/zipkin`)
-      # - traefik.http.routers.zipkin.middlewares=zipkin-stripprefix
-      # - traefik.http.middlewares.zipkin-stripprefix.stripprefix.prefixes=/api/zipkin
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth-api.rule=PathPrefix(`/api/zipkin`)
+      - traefik.http.routers.auth-api.entrypoints=websecure
+      - traefik.http.routers.auth-api.tls.certresolver=le
+      - traefik.http.routers.auth-api.middlewares=auth-stripprefix
+      - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/zipkin
     ports:
       - "9411:9411"
     networks:
@@ -132,3 +146,4 @@ networks:
 
 volumes:
   redis-data:
+  letsencrypt:
