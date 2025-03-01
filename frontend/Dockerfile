@@ -22,4 +22,4 @@ ENV TODOS_API_ADDRESS=http://localhost:3001
 EXPOSE ${PORT}
 
 # Start the application in development mode
-CMD ["npm", "run", "build"]
+CMD ["npm", "run", "dev"]

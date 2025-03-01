@@ -1,44 +1,46 @@
-# version: '3.8'
-
 services:
   traefik:
-    image: traefik:v2.5
+    image: traefik:v2.10
     command:
-      - --api.insecure=true
-      - --providers.docker=true
+      - --api
+      - --providers.docker
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --certificatesresolvers.le.acme.email=iwekasomto@proton.me
-      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      - --certificatesresolvers.myresolver.acme.email=iwekasomex61@gmail.com
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - letsencrypt:/letsencrypt
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./acme.json:/letsencrypt/acme.json"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.hngprog.biz`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=somex:$$2y$$10$$6Lf3ixHBeAShv2CwZcHlN.YuXQ024CqXE1ui.tpRWrDyydpVYtzge"
     networks:
       - app-net
   frontend:
-    build: 
-      context: ./frontend  
-      dockerfile: Dockerfile
+    build: ./frontend
     container_name: frontend
-    ports:
-      - "8080:8080"
     environment:
       - AUTH_API_ADDRESS=http://auth-api:8081
       - TODOS_API_ADDRESS=http://todos-api:8082
       - PORT=8080
-      - ZIPKIN_URL=http://zipkin:9411 
+      - ZIPKIN_URL=http://zipkin:9411
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.frontend.rule=PathPrefix(`/`)
-      - traefik.http.routers.frontend.entrypoints=websecure
-      - traefik.http.routers.frontend.tls.certresolver=le
-      - traefik.http.services.frontend.loadbalancer.server.port=8080
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`stage-4.hngprog.biz`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=8080"
     networks:
       - app-net
 
@@ -52,12 +54,11 @@ services:
       - USERS_API_ADDRESS=http://users-api:8083
       - JWT_SECRET=myfancysecret
     labels:
-      - traefik.enable=true
+      - "traefik.enable=true"
       - traefik.http.routers.auth-api.rule=PathPrefix(`/api/auth`)
-      - traefik.http.routers.auth-api.entrypoints=websecure
-      - traefik.http.routers.auth-api.tls.certresolver=le
-      - traefik.http.routers.auth-api.middlewares=auth-stripprefix
-      - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth
+      - "traefik.http.routers.auth-api.entrypoints=websecure"
+      - "traefik.http.routers.auth-api.tls=true"
+      - "traefik.http.routers.auth-api.tls.certresolver=myresolver"
     ports:
       - "8081:8081"
     networks:
@@ -72,9 +73,12 @@ services:
       - JWT_SECRET=myfancysecret
       - SERVER_PORT=8083
       - traefik.enable=true
-      - traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)
-      - traefik.http.routers.todos-api.middlewares=todos-stripprefix
-      - traefik.http.middlewares.todos-stripprefix.stripprefix.prefixes=/api/todos
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users-api.rule=PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users-api.entrypoints=websecure"
+      - "traefik.http.routers.users-api.tls=true"
+      - "traefik.http.routers.users-api.tls.certresolver=myresolver"
     ports:
       - "8083:8083"
     networks:
@@ -93,12 +97,14 @@ services:
       - REDIS_CHANNEL=log_channel
       - TODO_API_PORT=8082
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.auth-api.rule=PathPrefix(`/api/todos`)
-      - traefik.http.routers.auth-api.entrypoints=websecure
-      - traefik.http.routers.auth-api.tls.certresolver=le
-      - traefik.http.routers.auth-api.middlewares=auth-stripprefix
-      - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/todos
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos-api.rule=PathPrefix(`/api/todos`)"
+      - "traefik.http.routers.todos-api.entrypoints=websecure"
+      - "traefik.http.routers.todos-api.tls=true"
+      - "traefik.http.routers.todos-api.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.todos-stripprefix.stripprefix.prefixes=/api/todos"
+      - "traefik.http.routers.todos-api.middlewares=todos-stripprefix"
+
     networks:
       - app-net
 
@@ -130,12 +136,13 @@ services:
     image: openzipkin/zipkin
     container_name: zipkin
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.auth-api.rule=PathPrefix(`/api/zipkin`)
-      - traefik.http.routers.auth-api.entrypoints=websecure
-      - traefik.http.routers.auth-api.tls.certresolver=le
-      - traefik.http.routers.auth-api.middlewares=auth-stripprefix
-      - traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/zipkin
+      - "traefik.enable=true"
+      - "traefik.http.routers.zipkin.rule=PathPrefix(`/api/zipkin`)"
+      - "traefik.http.routers.zipkin.entrypoints=websecure"
+      - "traefik.http.routers.zipkin.tls=true"
+      - "traefik.http.routers.zipkin.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.zipkin-stripprefix.stripprefix.prefixes=/api/zipkin"
+      - "traefik.http.routers.zipkin.middlewares=zipkin-stripprefix"
     ports:
       - "9411:9411"
     networks:
